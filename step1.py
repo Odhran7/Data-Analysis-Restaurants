@@ -124,7 +124,7 @@ def scrape_data(url):
     }
     headers = {
         "content-type": "application/x-www-form-urlencoded",
-        "X-RapidAPI-Key": "67deec4f33msh0943ba7741c6d31p1f00f3jsn3e8d30d8d661",
+        "X-RapidAPI-Key": api_key,
         "X-RapidAPI-Host": "worldwide-restaurants.p.rapidapi.com"
     }
 
