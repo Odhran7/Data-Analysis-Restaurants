@@ -135,6 +135,7 @@ def wait_for_page_load(driver, timeout=10):
     except TimeoutException:
         logging.info("Timed out waiting for page to load")
 
+# Function attempts to search 'globally' instead of by domicile
 def attempt_global_search(driver):
     try:
         search_instead_button = WebDriverWait(driver, 10).until(

@@ -97,7 +97,6 @@ def describe_data(df):
     plt.show()
 
 # This function creates a network of the restaurants based on the parameter passed in and the threshold passed in
-
 def create_network(df, param, threshold):
     G = nx.Graph()
     for index, row in df.iterrows():
