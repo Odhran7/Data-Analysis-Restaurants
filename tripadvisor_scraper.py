@@ -17,7 +17,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG, filename='logs/tripadvisor_scraper.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Declare output file
-output_csv = './output/extraMichelinNY.csv'
+output_csv = './output/extraMichelinNYv2.csv'
 
 # Function parses the ratings by category
 def get_ratings(driver):
@@ -38,14 +38,17 @@ def get_ratings(driver):
 
 # Selection functions beneath this line 
 
-# This function clicks on the most reviewed restaurant or Michelin restaurants if isMichelin
 def click_on_most_reviewed(driver, isMichelin):
     wait_for_page_load(driver)
-    restaurant_blocks = WebDriverWait(driver, 10).until(
+    original_restaurant_blocks = WebDriverWait(driver, 10).until(
         EC.presence_of_all_elements_located((By.CSS_SELECTOR, '.location-meta-block'))
     )
-    restaurant_blocks = restaurant_blocks[:3]
+    restaurant_blocks = original_restaurant_blocks[:3]
+    print(restaurant_blocks)
     review_count_elements, restaurant_blocks = check_michelin(driver, restaurant_blocks, isMichelin)
+    if not review_count_elements or not restaurant_blocks:
+        logging.info("No Michelin restaurants found, defaulting to ranking by reviews")
+        review_count_elements, restaurant_blocks = get_reviews_without_michelin(original_restaurant_blocks[:3])
     max_review_count = 0
     max_reviews_element = None
 
@@ -64,6 +67,16 @@ def click_on_most_reviewed(driver, isMichelin):
         
     if max_reviews_element:
         driver.execute_script("arguments[0].click();", max_reviews_element)
+
+# This function gets the reviews without Michelin
+def get_reviews_without_michelin(restaurant_blocks):
+    filtered_reviews = []
+    filtered_blocks = []
+    for block in restaurant_blocks:
+        review_count_element = block.find_element(By.CSS_SELECTOR, 'a.review_count')
+        filtered_reviews.append(review_count_element)
+        filtered_blocks.append(block)
+    return filtered_reviews, filtered_blocks
 
 # This function narrows down a search to remove/add Michelin restaurants
 def check_michelin(driver, restaurant_blocks, isMichelin):
@@ -147,8 +160,9 @@ def attempt_global_search(driver):
         pass
 
 # This function uses Selenium to scrape the data from TripAdvisor
-def scrape_location_data(query, isMichelin):
+def scrape_location_data(query, isMichelin, idx):
     options = Options()
+    options.headless = True
     options.set_preference("permissions.default.geo", 1)  
 
     driver = webdriver.Firefox(options=options)
@@ -255,7 +269,7 @@ def scrape_location_data(query, isMichelin):
         ratings = get_ratings(driver)
 
         debug_print(restaurant_name, address, url, restaurant_url, cuisines_text, number_of_reviews, ratings)
-        write_to_csv(restaurant_name, address, url, restaurant_url, cuisines_text, number_of_reviews, ratings)
+        write_to_csv(idx, query, restaurant_name, address, url, restaurant_url, cuisines_text, number_of_reviews, ratings)
 
     finally:
         if driver:
@@ -286,10 +300,10 @@ def debug_print(restaurant_name, address, url, restaurant_url, cuisines_text, nu
     print(json.dumps(ratings, indent=4))
 
 # This function is used to write the data to a CSV file
-def write_to_csv(restaurant_name, address, url, restaurant_url, cuisines_text, number_of_reviews, ratings):
+def write_to_csv(idx, query, restaurant_name, address, url, restaurant_url, cuisines_text, number_of_reviews, ratings):
     write_header = not os.path.exists(output_csv) 
     with open(output_csv, mode='a', newline='', encoding='utf-8') as csv_file:
-        fieldnames = ['Restaurant Name', 'Address', 'URL', 'Restaurant URL', 'Cuisines', 'Number of Reviews']
+        fieldnames = ["idx", "Query", 'Restaurant Name', 'Address', 'URL', 'Restaurant URL', 'Cuisines', 'Number of Reviews']
         fieldnames.extend([f"{key} reviews" for key in ratings.keys()])
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         
@@ -297,6 +311,8 @@ def write_to_csv(restaurant_name, address, url, restaurant_url, cuisines_text, n
             writer.writeheader()
 
         writer.writerow({
+            "idx": idx,
+            "Query": query,
             'Restaurant Name': restaurant_name,
             'Address': address,
             'URL': url,
@@ -311,5 +327,5 @@ def write_to_csv(restaurant_name, address, url, restaurant_url, cuisines_text, n
         })
 
 
-# query = "212"
-# scrape_location_data(query, True)
+# query = "Le Colonial"
+# scrape_location_data(query, True, 0)
