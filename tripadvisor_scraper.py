@@ -350,8 +350,8 @@ def write_to_csv(idx, query, restaurant_name, address, url, restaurant_url, cuis
         })
 
 
-query = "26 Seats"
-scrape_location_data(query, False, 0)
+# query = "26 Seats"
+# scrape_location_data(query, False, 0)
 """
 14 Wall Street
 Bayard's
