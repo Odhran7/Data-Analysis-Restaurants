@@ -44,7 +44,6 @@ def click_on_most_reviewed(driver, isMichelin):
         EC.presence_of_all_elements_located((By.CSS_SELECTOR, '.location-meta-block'))
     )
     restaurant_blocks = original_restaurant_blocks[:3]
-    print(restaurant_blocks)
     review_count_elements, restaurant_blocks = check_michelin(driver, restaurant_blocks, isMichelin)
     if not review_count_elements or not restaurant_blocks:
         logging.info("No Michelin restaurants found, defaulting to ranking by reviews")
@@ -107,7 +106,6 @@ def accept_cookies(driver):
             EC.presence_of_element_located((By.ID, "onetrust-accept-btn-handler"))
         )
         accept_cookies_button.click()
-        time.sleep(7)
     except Exception as e:
         logging.info("Accept cookies pop-up not available")
         pass
@@ -159,6 +157,18 @@ def attempt_global_search(driver):
         logging.info("Search query does not contain global results")
         pass
 
+# This function switches to restaurant view
+def switch_to_restaurant_view(driver):
+    wait_for_page_load(driver)
+    try:
+        restaurantButton = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'a[data-filter-id="EATERY"]'))
+        )
+        driver.execute_script("arguments[0].click();", restaurantButton)
+    except TimeoutException:
+        logging.info("Could not find restaurant button")
+        return
+
 # This function uses Selenium to scrape the data from TripAdvisor
 def scrape_location_data(query, isMichelin, idx):
     options = Options()
@@ -200,19 +210,32 @@ def scrape_location_data(query, isMichelin, idx):
         # Accept cookies
         accept_cookies(driver)
 
+        # Wait for page to load
+        wait_for_page_load(driver)
+
         # Attempt to dismiss the sign in dialog
         avoid_sign_in_dialog(driver)
 
         # Wait for search to complete
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "search-results-list"))
-        )
+        try:
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "search-results-list"))
+            )
+        except TimeoutException:
+            logging.info("Timed out waiting for search results")
+            pass
 
         # Change to global perspective
         attempt_global_search(driver)
 
         # Accept cookies
         accept_cookies(driver)
+
+        # Change to restaurant view
+        switch_to_restaurant_view(driver)
+
+        # Wait for page to load 
+        wait_for_page_load(driver)
 
         # Call selection function here
         click_on_most_reviewed(driver, isMichelin)
@@ -327,5 +350,12 @@ def write_to_csv(idx, query, restaurant_name, address, url, restaurant_url, cuis
         })
 
 
-# query = "Le Colonial"
-# scrape_location_data(query, True, 0)
+query = "26 Seats"
+scrape_location_data(query, False, 0)
+"""
+14 Wall Street
+Bayard's
+26 Seats
+44
+Cafe Luxembourg
+"""
