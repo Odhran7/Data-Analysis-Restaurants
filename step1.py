@@ -2,14 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import networkx as nx
-from dotenv import load_dotenv
 import os
 import requests
 
-# Loading env variables
-
-load_dotenv(dotenv_path='.env')
-api_key = os.environ.get('RESTAURANT_API_KEY')
 
 # Reading the data 
 
@@ -95,6 +90,7 @@ def describe_data(df):
     cellLoc='center',
     loc='center')
     plt.show()
+describe_data(df)
 
 # This function creates a network of the restaurants based on the parameter passed in and the threshold passed in
 def create_network(df, param, threshold):
@@ -131,5 +127,5 @@ def scrape_data(url):
 
     print(response.json())
 
-scrape_data("https://worldwide-restaurants.p.rapidapi.com/detail")
+# scrape_data("https://worldwide-restaurants.p.rapidapi.com/detail")
 

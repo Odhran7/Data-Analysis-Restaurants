@@ -117,7 +117,12 @@ def analyze_link_affinity_v2(n_clusters, data, numerical_cols):
     plt.show()
 
 # analyze_link_affinity_v2(4, data, numerical_cols)
-def analyze_clusters_v4(n_clusters, standardized_data, numerical_cols, linkage, affinity):
+def analyze_clusters_v4(n_clusters, data, numerical_cols, linkage, affinity):
+    # Standardize the numerical columns
+    scaler = StandardScaler()
+    standardized_data = scaler.fit_transform(data[numerical_cols])
+
+    # Perform clustering
     clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage=linkage, affinity=affinity)
     labels = clustering.fit_predict(standardized_data)
     clustered_data = data.copy()
@@ -129,36 +134,32 @@ def analyze_clusters_v4(n_clusters, standardized_data, numerical_cols, linkage, 
     cluster_sizes = np.bincount(labels)
     return avg_values_clusters, michelin_proportion, avg_michelin_proportion, cluster_sizes
 
-
 def find_best_combination(data, numerical_cols):
-    linkage_methods = ['single', 'complete', 'average', 'ward']
-    distance_metrics = ['euclidean', 'cityblock', 'chebyshev', 'minkowski']
+    linkage_methods = ['single', 'complete', 'average', 'weighted', 'centroid', 'median', 'ward']
+    distance_metrics = ['braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation', 'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'jensenshannon', 'kulsinski', 'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule']
     n_clusters_range = range(2, 11)
-    lowest_entropy = np.inf
+    highest_score = -np.inf
     best_combination = None
-    
-    numerical_data = data[numerical_cols]
-    scaler = StandardScaler()
-    standardized_data = scaler.fit_transform(numerical_data)
-    
+    lambda_factor = 0.5
     for n_clusters in n_clusters_range:
         for linkage_method in linkage_methods:
             for distance_metric in distance_metrics:
                 if linkage_method == 'ward' and distance_metric != 'euclidean':
                     continue
-                
+
                 try:
-                    avg_values_clusters, michelin_proportion, avg_michelin_proportion, cluster_sizes = analyze_clusters_v4(n_clusters, standardized_data, numerical_cols, linkage_method, distance_metric)
+                    avg_values_clusters, michelin_proportion, avg_michelin_proportion, cluster_sizes = analyze_clusters_v4(
+                        n_clusters, data, numerical_cols, linkage_method, distance_metric
+                    )
                     cluster_entropy = entropy(cluster_sizes / np.sum(cluster_sizes))
-                    
-                    if cluster_entropy < lowest_entropy:
-                        lowest_entropy = cluster_entropy
+                    std_dev_penalty = np.std(cluster_sizes)
+                    score = 1 / (cluster_entropy + lambda_factor * std_dev_penalty)
+                    if score > highest_score:
+                        highest_score = score
                         best_combination = (n_clusters, linkage_method, distance_metric)
                 except (ValueError, TypeError) as e:
-                    print(f"Error for n_clusters={n_clusters}, linkage_method={linkage_method}, distance_metric={distance_metric}")
-                    print(e)
-                    continue
-                
+                    print(f"Error for n_clusters={n_clusters}, linkage_method={linkage_method}, distance_metric={distance_metric}: {e}")
+
     if best_combination is None:
         print('No valid combination found.')
     else:
@@ -166,63 +167,31 @@ def find_best_combination(data, numerical_cols):
         print(f'Number of clusters: {best_combination[0]}')
         print(f'Linkage method: {best_combination[1]}')
         print(f'Distance metric: {best_combination[2]}')
-        print(f'Lowest entropy: {lowest_entropy}')
-    linkage_methods = ['single', 'complete', 'average', 'ward']
-    distance_metrics = ['euclidean', 'cityblock', 'chebyshev', 'minkowski']
-    n_clusters_range = range(2, 11)
-    lowest_entropy = np.inf
-    best_combination = None
-    
-    for n_clusters in n_clusters_range:
-        for linkage_method in linkage_methods:
-            for distance_metric in distance_metrics:
-                if linkage_method == 'ward' and distance_metric != 'euclidean':
-                    continue
-                
-                try:
-                    avg_values_clusters, michelin_proportion, avg_michelin_proportion, cluster_sizes = analyze_clusters_v4(n_clusters, data, numerical_cols, linkage_method, distance_metric)
-                    cluster_entropy = entropy(cluster_sizes / np.sum(cluster_sizes))
-                    
-                    if cluster_entropy < lowest_entropy:
-                        lowest_entropy = cluster_entropy
-                        best_combination = (n_clusters, linkage_method, distance_metric)
-                except (ValueError, TypeError) as e:
-                    print(f"Error for n_clusters={n_clusters}, linkage_method={linkage_method}, distance_metric={distance_metric}")
-                    print(e)
-                    continue
-                
-    if best_combination is None:
-        print('No valid combination found.')
-    else:
-        print(f'Best combination:')
-        print(f'Number of clusters: {best_combination[0]}')
-        print(f'Linkage method: {best_combination[1]}')
-        print(f'Distance metric: {best_combination[2]}')
-        print(f'Lowest entropy: {lowest_entropy}')
-
-find_best_combination(data, numerical_cols)
-
+        print(f'Highest score: {highest_score}')
+# find_best_combination(data, numerical_cols)
 """
 Best combination:
-Number of clusters: 6
-Linkage method: single
-Distance metric: braycurtis
-Highest score: 2.740041928721174
+Number of clusters: 3
+Linkage method: complete
+Distance metric: correlation
+Highest score: 0.25067221172118465
 """
-
-def create_optimal_dendrogram(data, numerical_cols):
+def create_optimal_dendrogram_with_clusters(data, numerical_cols, n_clusters):
     numerical_data = data[numerical_cols]
     scaler = StandardScaler()
     standardized_data = scaler.fit_transform(numerical_data)
-    linkage_method = 'single'
-    distance_metric = 'euclidean'
+    linkage_method = 'complete'
+    distance_metric = 'correlation'
     Z = linkage(standardized_data, method=linkage_method, metric=distance_metric)
+    plt.figure(figsize=(25, 10))
     dendrogram(Z, leaf_rotation=90, leaf_font_size=10)
     plt.title(f'Linkage: {linkage_method}\nDistance: {distance_metric}')
+    plt.axhline(y=Z[-(n_clusters-1), 2], color='r', linestyle='--')
+    
     plt.tight_layout()
     plt.show()
 
-# create_optimal_dendrogram(data, numerical_cols)
+# create_optimal_dendrogram_with_clusters(data, numerical_cols, 3)
 
 # Print the pair plot
 def interpret(clustered_data, numerical_cols):
@@ -250,16 +219,37 @@ def perform_clustering_analysis(n_clusters, linkage_method, distance_metric, dat
 # This function highlights the clusters with high michelin proportion
 def interpret_with_michelin_proportion(clustered_data, numerical_cols):
     michelin_proportion = clustered_data.groupby('Cluster')['InMichelin'].mean()
-    high_michelin_clusters = michelin_proportion[michelin_proportion > 0.6].index
+    high_michelin_clusters = michelin_proportion[michelin_proportion > 0.5].index.tolist()
     pairplot = sns.pairplot(data=clustered_data, hue='Cluster', vars=numerical_cols, palette='bright', plot_kws={'alpha': 0.5})
-    for i, (label, handle) in enumerate(zip(pairplot._legend.get_texts(), pairplot._legend.legendHandles)):
-        cluster_num = int(label.get_text())
+    handles, labels = pairplot.axes[0][0].get_legend_handles_labels()
+    new_handles = []
+    for handle, label in zip(handles, labels):
+        cluster_num = int(label)
         if cluster_num in high_michelin_clusters:
-            handle.set_color('black')
-            handle.set_linewidth(1)
-    pairplot.fig.suptitle('Pairplot of Numerical Variables with Clusters', y=1.02)
+            new_handle = plt.Line2D([], [], markerfacecolor=handle.get_facecolor(), markeredgecolor='black', marker='o', markersize=10, linestyle='None')
+            new_handles.append(new_handle)
+        else:
+            new_handles.append(handle)
+    
+    plt.legend(new_handles, labels, title='Cluster (High Michelin in black)', loc='upper right', bbox_to_anchor=(1.05, 1), borderaxespad=0.)
+
     plt.show()
 
     return michelin_proportion
+"""
+Food vs. Service: If the points in this scatter plot panel trend upward from left to right and are relatively tightly packed along a line, this would suggest a strong positive correlation between the quality of food and the quality of service. Restaurants with better food tend to have better service.
 
-perform_clustering_analysis(n_clusters=2, linkage_method='single', distance_metric='euclidean', data=data, numerical_cols=numerical_cols)
+Food vs. Decor: Similar to Food vs. Service, if the scatter plot shows an upward trend from left to right, it suggests that restaurants with better food also tend to have better decor.
+
+Food vs. Price: If the scatter plot trends upward, this indicates that restaurants with higher food ratings tend to be more expensive.
+
+Service vs. Decor: An upward trend would suggest that restaurants with better service tend to have nicer decor.
+
+Service vs. Price: An upward trend here suggests that better service is associated with higher prices.
+
+Decor vs. Price: An upward trend indicates that more well-decorated restaurants are likely to be more expensive.
+"""
+
+
+
+# perform_clustering_analysis(n_clusters=3, linkage_method='complete', distance_metric='correlation', data=data, numerical_cols=numerical_cols)
