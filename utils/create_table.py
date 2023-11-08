@@ -52,14 +52,8 @@ ax.axis('off')
 
 table = ax.table(cellText=vals, loc='center', cellLoc='center', colLoc='center')
 table.auto_set_font_size(False)
-table.set_fontsize(8)  # You can adjust this value as needed
-table.auto_set_column_width(col=list(range(len(vals[0]))))  # Adjust columns to content
-
-# Adjust layout to make room for the table:
-plt.tight_layout()
-
-# Save the figure as an image   
+table.set_fontsize(8)
+table.auto_set_column_width(col=list(range(len(vals[0]))))
+plt.tight_layout() 
 plt.savefig('table.png', bbox_inches='tight', dpi=300)
-
-# Show the figure
 plt.show()

@@ -27,52 +27,38 @@ explainer = shap.TreeExplainer(model.named_steps['xgbclassifier'])
 # shap.save_html('shap_force_plot.html', force_plot) 
 
 df = pd.read_csv('merged_with_sentiment.csv')
-
-# This assumes 'InMichelin' is a column in your dataframe that indicates Michelin status
 michelin_df = df[df['InMichelin'] == 1]
 non_michelin_df = df[df['InMichelin'] == 0]
-
-# Make sure to select only the features for SHAP value computation
 features = ["food", "service", "price", "decor", "number_of_reviews", "excellent", "very_good", "average", "poor", "terrible", "sentiment_polarity", "sentiment_subjectivity"]
 
 X_michelin = michelin_df[features]
 X_non_michelin = non_michelin_df[features]
-# Compute SHAP values for each group
 shap_values_michelin = explainer.shap_values(X_michelin)
 shap_values_non_michelin = explainer.shap_values(X_non_michelin)
-
-# Generate and save summary dot plot for Michelin
 shap.summary_plot(shap_values_michelin, X_michelin, show=True)
 # shap.plots.beeswarm(explainer, show=True)
 # shap.save_html('shap_summary_michelin.html', shap.summary_plot(shap_values_michelin, X_michelin, plot_type="dot", show=False))
-
-# Generate and save summary dot plot for non-Michelin
 shap.summary_plot(shap_values_non_michelin, X_non_michelin, show=True)
 # shap.save_html('shap_summary_non_michelin.html', shap.summary_plot(shap_values_non_michelin, X_non_michelin, plot_type="dot", show=False))
 explainer_michelin = shap.Explanation(values=shap_values_michelin,
                                       base_values=explainer.expected_value,
-                                      data=X_michelin.values,  # or X_michelin if it's already numpy array
+                                      data=X_michelin.values,  
                                       feature_names=features)
 
 explainer_non_michelin = shap.Explanation(values=shap_values_non_michelin,
                                           base_values=explainer.expected_value,
-                                          data=X_non_michelin.values,  # or X_non_michelin if it's already numpy array
+                                          data=X_non_michelin.values,  
                                           feature_names=features)
 predictions = model.predict(df[features])
 
-# Separate the instances into two groups based on the predictions
-df_michelin_inclusion = df[features][predictions == 1]  # Assuming 1 is for Michelin inclusion
-df_michelin_non_inclusion = df[features][predictions == 0]  # Assuming 0 is for non-inclusion
-
-# Compute SHAP values for each group
+df_michelin_inclusion = df[features][predictions == 1] 
+df_michelin_non_inclusion = df[features][predictions == 0]  
 shap_values_inclusion = explainer.shap_values(df_michelin_inclusion)
 shap_values_non_inclusion = explainer.shap_values(df_michelin_non_inclusion)
 
-# Calculate the mean absolute SHAP values for each feature within each group
 mean_shap_values_inclusion = np.abs(shap_values_inclusion).mean(axis=0)
 mean_shap_values_non_inclusion = np.abs(shap_values_non_inclusion).mean(axis=0)
 
-# Create a bar plot for each feature for Michelin inclusion
 plt.figure(figsize=(10, 8))
 y_pos = np.arange(len(features))
 plt.barh(y_pos, mean_shap_values_inclusion, align='center', color='green')
@@ -80,8 +66,6 @@ plt.yticks(y_pos, features)
 plt.xlabel('Mean |SHAP value| (average impact on model output magnitude)')
 plt.title('Mean Absolute SHAP Values for Michelin Inclusion')
 plt.show()
-
-# Create a bar plot for each feature for Michelin non-inclusion
 plt.figure(figsize=(10, 8))
 y_pos = np.arange(len(features))
 plt.barh(y_pos, mean_shap_values_non_inclusion, align='center', color='red')

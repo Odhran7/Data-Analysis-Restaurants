@@ -192,8 +192,6 @@ def create_optimal_dendrogram_with_clusters(data, numerical_cols, n_clusters):
     plt.show()
 
 # create_optimal_dendrogram_with_clusters(data, numerical_cols, 3)
-
-# Print the pair plot
 def interpret(clustered_data, numerical_cols):
     pairplot = sns.pairplot(data=clustered_data, hue='Cluster', vars=numerical_cols, palette='bright', plot_kws={'alpha': 0.5})
     pairplot.fig.suptitle('Pairplot of Numerical Variables with Clusters', y=1.02)
@@ -206,26 +204,16 @@ def perform_clustering_analysis(n_clusters, linkage_method, distance_metric, dat
     numerical_data = data[numerical_cols]
     scaler = StandardScaler()
     standardized_data = scaler.fit_transform(numerical_data)
-    
-    # Perform clustering
     clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage=linkage_method, affinity=distance_metric)
     labels = clustering.fit_predict(standardized_data)
     clustered_data = data.copy()
     clustered_data['Cluster'] = labels
-    
-    # Calculate average values for each cluster
     avg_values_clusters = clustered_data.groupby('Cluster')[numerical_cols].mean()
     print("Average values for each cluster:\n", avg_values_clusters)
-    
-    # Calculate and print the count of restaurants in each cluster
     cluster_counts = clustered_data['Cluster'].value_counts()
     print("\nNumber of restaurants in each cluster:\n", cluster_counts)
-    
-    # Calculate and print the proportion of Michelin-starred restaurants in each cluster
     michelin_proportion = clustered_data.groupby('Cluster')['InMichelin'].mean()
     print("\nProportion of Michelin-starred restaurants in each cluster:\n", michelin_proportion)
-    
-    # Visualize the clusters with the proportion of Michelin-starred restaurants
     interpret_with_michelin_proportion_and_table(clustered_data, numerical_cols)
 
     return michelin_proportion
@@ -253,29 +241,15 @@ def interpret_with_michelin_proportion(clustered_data, numerical_cols):
 
 def interpret_with_michelin_proportion_and_table(clustered_data, numerical_cols):
     michelin_proportion = clustered_data.groupby('Cluster')['InMichelin'].mean()
-    
-    # Create the pairplot
     pairplot = sns.pairplot(data=clustered_data, hue='Cluster', vars=numerical_cols, palette='bright', plot_kws={'alpha': 0.5})
-    
-    # Make space for the table
     plt.subplots_adjust(right=0.8)
-    
-    # Prepare the table data
     cell_text = [[f"{prop:.2f}"] for prop in michelin_proportion]
     row_labels = [f"Cluster {i}" for i in michelin_proportion.index.tolist()]
-    
-    # Add the table to the existing figure
-    pairplot.fig.subplots_adjust(right=0.6)  # Make room for table
-    table_ax = pairplot.fig.add_axes([0.7, 0.1, 0.2, 0.8], frame_on=False)  # Add new axes for the table
+    pairplot.fig.subplots_adjust(right=0.6) 
+    table_ax = pairplot.fig.add_axes([0.7, 0.1, 0.2, 0.8], frame_on=False) 
     table_ax.axis('off')
-    
-    # Add the table to the subplot
     table_ax.table(cellText=cell_text, rowLabels=row_labels, colLabels=['Michelin Proportion'], cellLoc = 'center', loc='center right')
-    
-    # Set the title for the pairplot
     pairplot.fig.suptitle('Pairplot of Numerical Variables with Clusters and Michelin Proportions', y=1.02)
-    
-    # Show the plot
+
     plt.show()
-# Call the function with the appropriate parameters
 print(perform_clustering_analysis(n_clusters=3, linkage_method='complete', distance_metric='correlation', data=data, numerical_cols=numerical_cols))

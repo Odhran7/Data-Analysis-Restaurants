@@ -5,46 +5,31 @@ from sklearn.metrics import silhouette_score
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Load data
 df = pd.read_csv('merged_with_sentiment.csv')
-
-# Assume 'InMichelin' is not part of the clustering features
 X = df.drop('InMichelin', axis=1)
-
-# Handle missing values
 imputer = SimpleImputer(strategy='median')
 X_imputed = pd.DataFrame(imputer.fit_transform(X), columns=X.columns)
 
-# Scale features
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X_imputed)
-
-# Choose the number of clusters (k) using the silhouette score
 silhouette_scores = []
-K_range = range(2, 11)  # Example range from 2 to 10 clusters
+K_range = range(2, 11) 
 for K in K_range:
     kmeans = KMeans(n_clusters=K, init='k-means++', n_init=10, max_iter=300, random_state=42)
     kmeans.fit(X_scaled)
     score = silhouette_score(X_scaled, kmeans.labels_)
     silhouette_scores.append(score)
-
-# Plot the silhouette scores to find the best K
 plt.figure(figsize=(10, 6))
 plt.plot(K_range, silhouette_scores, 'bx-')
 plt.xlabel('k')
 plt.ylabel('Silhouette Score')
 plt.title('Silhouette Score for Different Values of k')
 plt.show()
-
-# Find the best K (number of clusters) based on the highest silhouette score
 best_K = K_range[silhouette_scores.index(max(silhouette_scores))]
 print(f"Best number of clusters based on silhouette score: {best_K}")
 
-# Create a final KMeans model with the best K
 kmeans_final = KMeans(n_clusters=best_K, init='k-means++', n_init=10, max_iter=300, random_state=42)
 kmeans_final.fit(X_scaled)
-
-# Assign the clusters to the original data
 df['Cluster'] = kmeans_final.labels_
 cluster_centers = pd.DataFrame(scaler.inverse_transform(kmeans_final.cluster_centers_), columns=X.columns)
 print("Cluster centers:")

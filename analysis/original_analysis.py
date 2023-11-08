@@ -5,11 +5,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-# The first thing we need to do is standardise the data 
 numerical_columns = ['Food', 'Decor', 'Service', 'Price']
 df = pd.read_csv('../data/MichelinNY.csv',  usecols=numerical_columns, encoding='ISO-8859-1')
 
-# Normally standardise the data with mean 0 and std 1
 scaler = StandardScaler()
 standardised_df = df.copy()
 standardised_data = pd.DataFrame(scaler.fit_transform(standardised_df))
