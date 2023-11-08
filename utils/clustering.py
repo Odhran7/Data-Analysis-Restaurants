@@ -206,15 +206,29 @@ def perform_clustering_analysis(n_clusters, linkage_method, distance_metric, dat
     numerical_data = data[numerical_cols]
     scaler = StandardScaler()
     standardized_data = scaler.fit_transform(numerical_data)
+    
+    # Perform clustering
     clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage=linkage_method, affinity=distance_metric)
     labels = clustering.fit_predict(standardized_data)
     clustered_data = data.copy()
     clustered_data['Cluster'] = labels
+    
+    # Calculate average values for each cluster
     avg_values_clusters = clustered_data.groupby('Cluster')[numerical_cols].mean()
-    print(avg_values_clusters)
+    print("Average values for each cluster:\n", avg_values_clusters)
+    
+    # Calculate and print the count of restaurants in each cluster
     cluster_counts = clustered_data['Cluster'].value_counts()
-    print(cluster_counts)
-    interpret_with_michelin_proportion(clustered_data, numerical_cols)
+    print("\nNumber of restaurants in each cluster:\n", cluster_counts)
+    
+    # Calculate and print the proportion of Michelin-starred restaurants in each cluster
+    michelin_proportion = clustered_data.groupby('Cluster')['InMichelin'].mean()
+    print("\nProportion of Michelin-starred restaurants in each cluster:\n", michelin_proportion)
+    
+    # Visualize the clusters with the proportion of Michelin-starred restaurants
+    interpret_with_michelin_proportion_and_table(clustered_data, numerical_cols)
+
+    return michelin_proportion
 
 # This function highlights the clusters with high michelin proportion
 def interpret_with_michelin_proportion(clustered_data, numerical_cols):
@@ -231,25 +245,37 @@ def interpret_with_michelin_proportion(clustered_data, numerical_cols):
         else:
             new_handles.append(handle)
     
-    plt.legend(new_handles, labels, title='Cluster (High Michelin in black)', loc='upper right', bbox_to_anchor=(1.05, 1), borderaxespad=0.)
+    plt.legend(new_handles, labels, title='Pair P', loc='upper right', bbox_to_anchor=(1.05, 1), borderaxespad=0.)
 
     plt.show()
 
     return michelin_proportion
-"""
-Food vs. Service: If the points in this scatter plot panel trend upward from left to right and are relatively tightly packed along a line, this would suggest a strong positive correlation between the quality of food and the quality of service. Restaurants with better food tend to have better service.
 
-Food vs. Decor: Similar to Food vs. Service, if the scatter plot shows an upward trend from left to right, it suggests that restaurants with better food also tend to have better decor.
-
-Food vs. Price: If the scatter plot trends upward, this indicates that restaurants with higher food ratings tend to be more expensive.
-
-Service vs. Decor: An upward trend would suggest that restaurants with better service tend to have nicer decor.
-
-Service vs. Price: An upward trend here suggests that better service is associated with higher prices.
-
-Decor vs. Price: An upward trend indicates that more well-decorated restaurants are likely to be more expensive.
-"""
-
-
-
-# perform_clustering_analysis(n_clusters=3, linkage_method='complete', distance_metric='correlation', data=data, numerical_cols=numerical_cols)
+def interpret_with_michelin_proportion_and_table(clustered_data, numerical_cols):
+    michelin_proportion = clustered_data.groupby('Cluster')['InMichelin'].mean()
+    
+    # Create the pairplot
+    pairplot = sns.pairplot(data=clustered_data, hue='Cluster', vars=numerical_cols, palette='bright', plot_kws={'alpha': 0.5})
+    
+    # Make space for the table
+    plt.subplots_adjust(right=0.8)
+    
+    # Prepare the table data
+    cell_text = [[f"{prop:.2f}"] for prop in michelin_proportion]
+    row_labels = [f"Cluster {i}" for i in michelin_proportion.index.tolist()]
+    
+    # Add the table to the existing figure
+    pairplot.fig.subplots_adjust(right=0.6)  # Make room for table
+    table_ax = pairplot.fig.add_axes([0.7, 0.1, 0.2, 0.8], frame_on=False)  # Add new axes for the table
+    table_ax.axis('off')
+    
+    # Add the table to the subplot
+    table_ax.table(cellText=cell_text, rowLabels=row_labels, colLabels=['Michelin Proportion'], cellLoc = 'center', loc='center right')
+    
+    # Set the title for the pairplot
+    pairplot.fig.suptitle('Pairplot of Numerical Variables with Clusters and Michelin Proportions', y=1.02)
+    
+    # Show the plot
+    plt.show()
+# Call the function with the appropriate parameters
+print(perform_clustering_analysis(n_clusters=3, linkage_method='complete', distance_metric='correlation', data=data, numerical_cols=numerical_cols))

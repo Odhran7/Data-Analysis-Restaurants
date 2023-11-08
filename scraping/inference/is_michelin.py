@@ -38,7 +38,7 @@ import csv
 # ]
 try:
     # for query in restaurant_names:
-    values = scrape_location_data("One Pico")
+    values = scrape_location_data("carbone")
     print(values)
     # values = [np.nan if x is None else x for x in values]
     # scraped_data = np.array(values, dtype=float).reshape(1, -1)

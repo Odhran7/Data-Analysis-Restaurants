@@ -7,6 +7,7 @@ from sklearn.metrics import classification_report, accuracy_score
 from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import make_pipeline as make_pipeline_imblearn
 from joblib import dump
+import shap
 
 data = pd.read_csv('merged_with_sentiment.csv')
 X = data.drop('InMichelin', axis=1)
@@ -79,3 +80,12 @@ sentiment_subjectivity    0.040538
 excellent                 0.033260
 average                   0.031916
 """
+
+explainer = shap.Explainer(best_estimator.named_steps['xgbclassifier'])
+
+# Compute SHAP values for the test set
+X_test_array = X_test.to_numpy()  # Converting DataFrame to NumPy array if necessary
+shap_values = explainer.shap_values(X_test_array)
+
+# Plot the SHAP values
+shap.summary_plot(shap_values, X_test, feature_names=X_test.columns)

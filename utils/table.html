@@ -1,0 +1,48 @@
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Cluster</th>
+      <th>Variables</th>
+      <th>Interpretation</th>
+      <th>Michelin Percentage</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>KMeans Cluster 0</td>
+      <td>high 'number_of_reviews', 'excellent', 'sentiment_polarity', and 'sentiment_subjectivity'</td>
+      <td>Very popular, positive reviews</td>
+      <td>High Michelin percentage (71.79%)</td>
+    </tr>
+    <tr>
+      <td>KMeans Cluster 1</td>
+      <td>very high 'price' and 'terrible'</td>
+      <td>Poor quality expensive restaurants</td>
+      <td>Low Michelin percentage (59.09%)</td>
+    </tr>
+    <tr>
+      <td>KMeans Cluster 2</td>
+      <td>moderate values in various aspects</td>
+      <td>Average Restaurants</td>
+      <td>Moderate Michelin percentage (44.76%)</td>
+    </tr>
+    <tr>
+      <td>KMeans Cluster 3</td>
+      <td>moderate values for most features</td>
+      <td>Good all round restaurants</td>
+      <td>Highest Michelin percentage (87.93%)</td>
+    </tr>
+    <tr>
+      <td>DBSCAN Cluster 0</td>
+      <td>high 'number_of_reviews', 'very_good', 'average', 'poor', low 'sentiment_polarity', and low 'sentiment_subjectivity'</td>
+      <td>Restaurants that are popular but have mixed reviews - represent inaccurate reviewing?</td>
+      <td>Moderate Michelin percentage (46.23%)</td>
+    </tr>
+    <tr>
+      <td>DBSCAN Cluster 1</td>
+      <td>high 'number_of_reviews','excellent' 'very_good', 'sentiment_polarity','sentiment_subjectivity','excellent_to_terrible', poor 'value'</td>
+      <td>Very positive, strong reviews, but poor value for money</td>
+      <td>Highest Michelin percentage (86.19%)</td>
+    </tr>
+  </tbody>
+</table>

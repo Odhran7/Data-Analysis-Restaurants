@@ -1,3 +1,4 @@
+from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import pandas as pd
@@ -28,7 +29,9 @@ def create_scree_plot(n, numerical_columns, is_merged):
 
 def interpret_pca(numerical_columns, is_merged):
     df = read_merged(numerical_columns) if is_merged else read_original(numerical_columns)
-    print(df.isnull().any())
+    imputer = SimpleImputer(strategy='mean') 
+    df_imputed = imputer.fit_transform(df)
+    df = pd.DataFrame(df_imputed, columns=df.columns)
     scaler = StandardScaler()
     standardised_data = pd.DataFrame(scaler.fit_transform(df))
 
@@ -56,6 +59,10 @@ def interpret_pca(numerical_columns, is_merged):
 
 def interpret_pca_by_michelin(numerical_columns, michelin_column, is_merged):
     df = read_merged() if is_merged else read_original()
+    imputer = SimpleImputer(strategy='mean') 
+    if is_merged:
+        df_imputed = imputer.fit_transform(df)
+        df = pd.DataFrame(df_imputed, columns=df.columns)
 
     scaler = StandardScaler()
     standardised_data = scaler.fit_transform(df[numerical_columns])
@@ -72,8 +79,8 @@ def interpret_pca_by_michelin(numerical_columns, michelin_column, is_merged):
     colors = {0: 'red', 1: 'blue'}
     scatter = ax.scatter(pca_df['PC1'], pca_df['PC2'], c=pca_df[michelin_column].apply(lambda x: colors[x]), alpha=0.5)
     ax.set_title('PCA Plot')
-    ax.set_xlabel('Principal Component 1')
-    ax.set_ylabel('Principal Component 2')
+    ax.set_xlabel('High Quality Restaurants')
+    ax.set_ylabel('Good Value Restaurants')
 
     legend_labels = {0: 'Not Michelin', 1: 'Michelin'}
     handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=colors[label], markersize=10) for label in colors]
@@ -111,16 +118,20 @@ def logistic_regression_curves(pca_df, michelin_column):
 
 
 numerical_cols_merged = [
-    'Food', 
-    'Decor', 
-    'Service', 
-    'Price', 
-    'Number of Reviews', 
-    'Excellent reviews', 
-    'Very good reviews', 
-    'Average reviews', 
-    'Poor reviews', 
-    'Terrible reviews'
+    'food', 
+    'decor', 
+    'service', 
+    'price', 
+    'number_of_reviews', 
+    'excellent', 
+    'very_good', 
+    'average', 
+    'poor', 
+    'terrible',
+    "sentiment_polarity",
+    "sentiment_subjectivity",
+    "excellent_to_terrible_ratio",
+    "value"
 ]
 
 numerical_cols_original = [
